@@ -4,18 +4,37 @@
 
 点菜单栏的内存条图标弹出面板：顶部是整机「已使用内存」，下面按内存占用对应用排序。点开应用可以看进程明细，也可搜索应用名、进程名或 PID。面板打开时每两秒刷新，点面板外部收起后停止采样，后台不耗 CPU。
 
-## 安装
+<p>
+  <img src="docs/screenshots/overview.png" width="380" alt="按应用汇总的内存占用">
+  <img src="docs/screenshots/process-detail.png" width="380" alt="展开应用查看进程明细">
+</p>
 
-需要 macOS 14 或更新版本，以及支持 Swift 6 的 Xcode。
+## 下载安装
+
+需要 macOS 14 或更新版本，Apple 芯片和 Intel 均可。
+
+1. 到 [Releases](https://github.com/colinli007/RAMScope/releases/latest) 下载 `RAMScope-x.y.z.dmg`。
+2. 打开 DMG，把「内存用量」拖进「应用程序」。
+3. 首次打开：本应用没有经过 Apple 公证，第一次双击会提示「无法验证开发者」。点「完成」后，到 **系统设置 → 隐私与安全性**，在页面下方点「仍要打开」并确认。之后就能正常打开。
+
+   也可以在终端里执行下面这行，然后直接双击打开：
+
+   ```bash
+   xattr -dr com.apple.quarantine "/Applications/内存用量.app"
+   ```
+
+打开后只出现在菜单栏，不占 Dock；退出点面板右下角的「退出」。
+
+## 从源码构建
+
+需要支持 Swift 6 的 Xcode。
 
 ```bash
 xcodebuild -project RAMScope.xcodeproj -scheme RAMScope -configuration Release -derivedDataPath build build
 cp -R "build/Build/Products/Release/内存用量.app" /Applications/
 ```
 
-开机自启：系统设置 → 通用 → 登录项 → 添加「内存用量」。
-
-## 开发
+开发时：
 
 1. 打开 `RAMScope.xcodeproj`。
 2. 选择 `RAMScope` scheme 和 `My Mac`，按 `⌘R` 构建并运行。
