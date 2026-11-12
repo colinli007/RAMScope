@@ -1,61 +1,66 @@
 # RAMScope
 
-原生 macOS 菜单栏内存监控工具（App 名「内存用量」），不占 Dock，无第三方依赖。
+English | [简体中文](README.zh-CN.md)
 
-点菜单栏的内存条图标弹出面板：顶部是整机「已使用内存」，下面按内存占用对应用排序。点开应用可以看进程明细，也可搜索应用名、进程名或 PID。面板打开时每两秒刷新，点面板外部收起后停止采样，后台不耗 CPU。
+A native macOS menu bar memory monitor. Lightweight, no Dock icon, no third-party dependencies.
+
+Click the memory chip icon in the menu bar to open a popover: system-wide **Memory Used** at the top, apps sorted by memory below. Expand an app to see every process with its PID, or search by app name, process name or PID. The popover refreshes every 2 seconds while open and stops sampling as soon as it closes, so it uses no CPU in the background.
 
 <p>
-  <img src="docs/screenshots/overview.png" width="380" alt="按应用汇总的内存占用">
-  <img src="docs/screenshots/process-detail.png" width="380" alt="展开应用查看进程明细">
+  <img src="docs/screenshots/overview.png" width="380" alt="Memory grouped by app">
+  <img src="docs/screenshots/process-detail.png" width="380" alt="Processes of an expanded app">
 </p>
 
-## 下载安装
+> The interface is currently in Simplified Chinese only.
 
-需要 macOS 14 或更新版本，Apple 芯片和 Intel 均可。
+## Why RAMScope
 
-1. 到 [Releases](https://github.com/colinli007/RAMScope/releases/latest) 下载 `RAMScope-x.y.z.dmg`。
-2. 打开 DMG，把「内存用量」拖进「应用程序」。
-3. 首次打开：本应用没有经过 Apple 公证，第一次双击会提示「无法验证开发者」。点「完成」后，到 **系统设置 → 隐私与安全性**，在页面下方点「仍要打开」并确认。之后就能正常打开。
+- **Memory goes to whoever started it.** Helper processes count toward their app, and child processes count toward the app that launched them. For example, `node` running in VS Code's terminal counts toward VS Code, so you see what an app really costs.
+- **Nothing gets dropped.** A process with no app in its parent chain is grouped under the root of its process tree. For example, iOS Simulator processes are grouped under `launchd_sim` instead of disappearing.
+- **Same numbers as Activity Monitor.** Per-app memory uses the same metric as Activity Monitor's Memory column, and the header matches its Memory Used.
 
-   也可以在终端里执行下面这行，然后直接双击打开：
+## Install
+
+Requires macOS 14 or later. Universal build for Apple silicon and Intel.
+
+1. Download `RAMScope-x.y.z.dmg` from [Releases](https://github.com/colinli007/RAMScope/releases/latest).
+2. Open the DMG and drag 内存用量 (the app's name, "Memory Usage") into Applications.
+3. First launch: the app is not notarized by Apple, so macOS blocks the first launch with a message that it can't verify the developer. Click **Done**, then go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. After that the app opens normally.
+
+   Alternatively, run this once in Terminal and then open the app:
 
    ```bash
    xattr -dr com.apple.quarantine "/Applications/内存用量.app"
    ```
 
-打开后只出现在菜单栏，不占 Dock；退出点面板右下角的「退出」。
+The app lives only in the menu bar. To quit, click 退出 (Quit) in the bottom-right corner of the popover.
 
-## 从源码构建
+## Build from source
 
-需要支持 Swift 6 的 Xcode。
+Requires Xcode with Swift 6.
 
 ```bash
 xcodebuild -project RAMScope.xcodeproj -scheme RAMScope -configuration Release -derivedDataPath build build
 cp -R "build/Build/Products/Release/内存用量.app" /Applications/
 ```
 
-开发时：
+For development, open `RAMScope.xcodeproj`, select the `RAMScope` scheme and `My Mac`, then press `⌘R`. The project uses ad-hoc signing, so no development team is required.
 
-1. 打开 `RAMScope.xcodeproj`。
-2. 选择 `RAMScope` scheme 和 `My Mac`，按 `⌘R` 构建并运行。
-
-工程使用本地签名，无需配置开发者团队。源码位于 `RAMScope/`：
-
-| 文件 | 作用 |
+| File | Purpose |
 | --- | --- |
-| `RAMScope.swift` | 菜单栏图标与弹出面板，面板显示 / 收起时启停采样 |
-| `MemorySampler.swift` | 读取进程内存、沿父进程链按应用归并、系统已用内存 |
-| `MemoryView.swift` | SwiftUI 界面 |
+| `RAMScope/RAMScope.swift` | Menu bar item and popover; starts and stops sampling when the popover opens and closes |
+| `RAMScope/MemorySampler.swift` | Reads process memory, groups processes by app along the parent chain, and computes system memory used |
+| `RAMScope/MemoryView.swift` | SwiftUI interface |
 
-`内存用量.app/Contents/MacOS/RAMScope --snapshot` 会采样一次并把结果以 JSON 输出到标准输出，便于脚本调用和排查。
+`内存用量.app/Contents/MacOS/RAMScope --snapshot` takes one sample and prints it as JSON to stdout, which is handy for scripting and debugging.
 
-## 统计口径
+## How memory is counted
 
-- **单个应用的内存**：归属进程的内存足迹（`ri_phys_footprint`）之和，与「活动监视器」的「内存」列同一个值。它包含被压缩的内存，所以各应用加起来可以超过物理内存。
-- **归属**：内存算在启动它的一方。应用包内的 Helper 计入外层应用；应用启动的子进程沿父进程链计入该应用（如编辑器终端里的 `node` 计入编辑器）；父进程链上找不到应用的进程，归到所在进程树的根进程名下（如模拟器进程归到 `launchd_sim`）。
-- **已使用内存**：应用内存 + 联动内存 + 被压缩内存，对应活动监视器底部的「已使用内存」。
-- 只统计当前用户的进程；root 等其他用户的进程（如 WindowServer）读不到，不在列表里。
+- **App memory**: the sum of the memory footprint (`ri_phys_footprint`) of the app's processes. This is the same value as the Memory column in Activity Monitor. It includes compressed memory, so app totals can add up to more than physical RAM.
+- **Attribution**: a helper inside an app bundle counts toward the outer app. A child process counts toward the nearest app in its parent chain. A process with no app in its chain is grouped under the root process of its tree.
+- **Memory Used**: app memory + wired memory + compressed memory, matching Memory Used at the bottom of Activity Monitor.
+- Only processes of the current user are included. Processes owned by root or other users (such as WindowServer) can't be read.
 
-## 许可证
+## License
 
 [MIT](LICENSE)
