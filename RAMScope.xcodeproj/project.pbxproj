@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1B2C3D4E5F6071829304A5C /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304A5B /* AppLanguage.swift */; };
+		A1B2C3D4E5F6071829304A5E /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304A5D /* Localizable.xcstrings */; };
 		4D72055F2A4CAFB31914FCDB /* RAMScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8834F987C8BC6716F986014 /* RAMScope.swift */; };
 		74D40234B250122F5AFDC200 /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C122097EC0E8CCAC2C95F3 /* MemoryView.swift */; };
 		88620D14E4A9D465ACDB3E98 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 85D35E51186356A50C965108 /* AppIcon.icns */; };
@@ -14,6 +16,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A1B2C3D4E5F6071829304A5B /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6071829304A5D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		30902CE143822F64C4F37FA9 /* RAMScope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RAMScope.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		75C122097EC0E8CCAC2C95F3 /* MemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryView.swift; sourceTree = "<group>"; };
 		85D35E51186356A50C965108 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
@@ -41,7 +45,9 @@
 		A83C73480F036722DE971B19 /* RAMScope */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F6071829304A5B /* AppLanguage.swift */,
 				85D35E51186356A50C965108 /* AppIcon.icns */,
+				A1B2C3D4E5F6071829304A5D /* Localizable.xcstrings */,
 				C988B9C890A0EB1D4044CE61 /* MemorySampler.swift */,
 				75C122097EC0E8CCAC2C95F3 /* MemoryView.swift */,
 				F8834F987C8BC6716F986014 /* RAMScope.swift */,
@@ -85,10 +91,11 @@
 				};
 			};
 			buildConfigurationList = 028FCBDAD6F2DC479B418D64 /* Build configuration list for PBXProject "RAMScope" */;
-			developmentRegion = "zh-Hans";
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
+				en,
 				"zh-Hans",
 			);
 			mainGroup = 074CEE9E84ACC8F859615AD3;
@@ -109,6 +116,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				88620D14E4A9D465ACDB3E98 /* AppIcon.icns in Resources */,
+				A1B2C3D4E5F6071829304A5E /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +127,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D4E5F6071829304A5C /* AppLanguage.swift in Sources */,
 				F8D6FC7F00D1D4877A6AB2BA /* MemorySampler.swift in Sources */,
 				74D40234B250122F5AFDC200 /* MemoryView.swift in Sources */,
 				4D72055F2A4CAFB31914FCDB /* RAMScope.swift in Sources */,
@@ -191,7 +200,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_APP_SANDBOX = NO;
 				EXECUTABLE_NAME = RAMScope;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -200,9 +209,9 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = local.ramscope.monitor;
-				PRODUCT_NAME = "内存用量";
+				PRODUCT_NAME = RAMScope;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -214,7 +223,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_APP_SANDBOX = NO;
 				EXECUTABLE_NAME = RAMScope;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -223,9 +232,9 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.1;
+				MARKETING_VERSION = 0.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = local.ramscope.monitor;
-				PRODUCT_NAME = "内存用量";
+				PRODUCT_NAME = RAMScope;
 				SDKROOT = macosx;
 			};
 			name = Debug;

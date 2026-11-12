@@ -45,11 +45,11 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDeleg
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem = item
         if let button = item.button {
-            let icon = NSImage(systemSymbolName: "memorychip", accessibilityDescription: "内存用量")
+            let icon = NSImage(systemSymbolName: "memorychip", accessibilityDescription: "RAMScope")
             icon?.isTemplate = true
             button.image = icon
-            button.toolTip = "内存用量"
-            button.setAccessibilityLabel("内存用量")
+            button.toolTip = "RAMScope"
+            button.setAccessibilityLabel("RAMScope")
             button.target = self
             button.action = #selector(togglePopover)
         }

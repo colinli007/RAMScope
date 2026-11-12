@@ -2,9 +2,9 @@
 
 [English](README.md) | 简体中文
 
-原生 macOS 菜单栏内存监控工具（App 名「内存用量」），不占 Dock，无第三方依赖。
+原生 macOS 菜单栏内存监控工具，不占 Dock，无第三方依赖。
 
-点菜单栏的内存条图标弹出面板：顶部是整机「已使用内存」，下面按内存占用对应用排序。点开应用可以看进程明细，也可搜索应用名、进程名或 PID。面板打开时每两秒刷新，点面板外部收起后停止采样，后台不耗 CPU。
+点菜单栏的内存条图标弹出面板：顶部是整机「已使用内存」，下面按内存占用对应用排序。点开应用可以看进程明细，也可搜索应用名、进程名或 PID。面板打开时每两秒刷新，点面板外部收起后停止采样，后台不耗 CPU。界面支持英文和简体中文：默认跟随系统语言，也可以在地球图标菜单里随时切换，立即生效。
 
 <p>
   <img src="docs/screenshots/overview.png" width="380" alt="按应用汇总的内存占用">
@@ -22,13 +22,13 @@
 需要 macOS 14 或更新版本，Apple 芯片和 Intel 均可。
 
 1. 到 [Releases](https://github.com/colinli007/RAMScope/releases/latest) 下载 `RAMScope-x.y.z.dmg`。
-2. 打开 DMG，把「内存用量」拖进「应用程序」。
+2. 打开 DMG，把 RAMScope 拖进「应用程序」。
 3. 首次打开：本应用没有经过 Apple 公证，第一次双击会提示「无法验证开发者」。点「完成」后，到 **系统设置 → 隐私与安全性**，在页面下方点「仍要打开」并确认。之后就能正常打开。
 
    也可以在终端里执行下面这行，然后直接双击打开：
 
    ```bash
-   xattr -dr com.apple.quarantine "/Applications/内存用量.app"
+   xattr -dr com.apple.quarantine "/Applications/RAMScope.app"
    ```
 
 打开后只出现在菜单栏，不占 Dock；退出点面板右下角的「退出」。
@@ -39,7 +39,7 @@
 
 ```bash
 xcodebuild -project RAMScope.xcodeproj -scheme RAMScope -configuration Release -derivedDataPath build build
-cp -R "build/Build/Products/Release/内存用量.app" /Applications/
+cp -R "build/Build/Products/Release/RAMScope.app" /Applications/
 ```
 
 开发时：
@@ -54,8 +54,10 @@ cp -R "build/Build/Products/Release/内存用量.app" /Applications/
 | `RAMScope.swift` | 菜单栏图标与弹出面板，面板显示 / 收起时启停采样 |
 | `MemorySampler.swift` | 读取进程内存、沿父进程链按应用归并、系统已用内存 |
 | `MemoryView.swift` | SwiftUI 界面 |
+| `AppLanguage.swift` | App 内语言切换 |
+| `Localizable.xcstrings` | 翻译。新增语言时在这个字符串目录和 `AppLanguage` 里各加一项 |
 
-`内存用量.app/Contents/MacOS/RAMScope --snapshot` 会采样一次并把结果以 JSON 输出到标准输出，便于脚本调用和排查。
+`RAMScope.app/Contents/MacOS/RAMScope --snapshot` 会采样一次并把结果以 JSON 输出到标准输出，便于脚本调用和排查。
 
 ## 统计口径
 

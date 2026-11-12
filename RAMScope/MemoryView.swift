@@ -8,8 +8,13 @@ struct MemoryView: View {
     let refresh: () -> Void
     let quit: () -> Void
 
+    @AppStorage(AppLanguage.storageKey) private var language: AppLanguage = .system
     @State private var search = ""
     @State private var expandedGroups: Set<String> = []
+
+    private func t(_ key: String.LocalizationValue) -> String {
+        language.localized(key)
+    }
 
     private var query: String {
         search.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -58,13 +63,15 @@ struct MemoryView: View {
                     .accessibilityIdentifier("application-memory-list")
                 }
             } else {
-                ProgressView("正在读取内存用量…")
+                ProgressView(t("Reading memory usage…"))
                     .controlSize(.small)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             footer
         }
         .frame(width: Self.panelSize.width, height: Self.panelSize.height)
+        // Dates and numbers follow the chosen language too, not only the strings.
+        .environment(\.locale, language.locale)
         .accessibilityIdentifier("application-memory")
     }
 
@@ -76,28 +83,51 @@ struct MemoryView: View {
                 .frame(width: 36, height: 36)
                 .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 9))
                 .accessibilityHidden(true)
-            Text("应用内存")
+            Text(t("App Memory"))
                 .font(.system(size: 21, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
             Spacer()
+            languageMenu
             Button(action: refresh) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 14, weight: .medium))
                     .frame(width: 27, height: 24)
             }
             .buttonStyle(.borderless)
-            .help("立即刷新")
-            .accessibilityLabel("立即刷新")
+            .help(t("Refresh Now"))
+            .accessibilityLabel(t("Refresh Now"))
         }
         .padding(.horizontal, 18)
         .padding(.top, 16)
         .padding(.bottom, 14)
     }
 
+    private var languageMenu: some View {
+        Menu {
+            Picker(selection: $language) {
+                ForEach(AppLanguage.allCases) { option in
+                    Text(option.title(in: language)).tag(option)
+                }
+            } label: {
+                EmptyView()
+            }
+            .pickerStyle(.inline)
+        } label: {
+            Image(systemName: "globe")
+                .font(.system(size: 14, weight: .medium))
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(t("Language"))
+        .accessibilityLabel(t("Language"))
+        .accessibilityIdentifier("language-menu")
+    }
+
     private func systemUsage(_ snapshot: MemorySnapshot) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("已使用内存")
+                Text(t("Memory Used"))
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
                 Text("\(formatBytes(snapshot.usedBytes)) / \(formatBytes(snapshot.totalBytes))")
@@ -118,7 +148,7 @@ struct MemoryView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
-            TextField("搜索应用或进程", text: $search)
+            TextField(t("Search apps or processes"), text: $search)
                 .textFieldStyle(.plain)
                 .accessibilityIdentifier("application-memory-search")
             if !search.isEmpty {
@@ -129,7 +159,7 @@ struct MemoryView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("清空搜索")
+                .accessibilityLabel(t("Clear Search"))
             }
         }
         .font(.system(size: 13))
@@ -140,11 +170,11 @@ struct MemoryView: View {
 
     private var columnHeaders: some View {
         HStack {
-            Text("应用")
+            Text(t("App"))
             Spacer()
             Image(systemName: "arrow.down")
                 .font(.system(size: 9, weight: .semibold))
-            Text("内存占用")
+            Text(t("Memory"))
         }
         .font(.system(size: 11, weight: .medium))
         .foregroundStyle(.secondary)
@@ -204,7 +234,11 @@ struct MemoryView: View {
             }
             .buttonStyle(AppRowButtonStyle())
             .accessibilityLabel(group.name)
-            .accessibilityValue("\(formatBytes(group.bytes))，\(group.processes.count) 个进程，\(expanded ? "已展开" : "已折叠")")
+            .accessibilityValue([
+                formatBytes(group.bytes),
+                t("\(group.processes.count) processes"),
+                expanded ? t("Expanded") : t("Collapsed"),
+            ].joined(separator: ", "))
             .accessibilityIdentifier("memory-group-\(group.id)")
 
             if expanded {
@@ -225,7 +259,8 @@ struct MemoryView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .foregroundStyle(.primary)
-            Text("PID \(process.id)")
+            // verbatim: a PID is an identifier, so no thousands separator ("PID 95760", not "PID 95,760")
+            Text(verbatim: "PID \(process.id)")
                 .font(.system(size: 10).monospacedDigit())
                 .foregroundStyle(.secondary)
                 .fixedSize()
@@ -247,7 +282,7 @@ struct MemoryView: View {
             Image(systemName: query.isEmpty ? "memorychip" : "magnifyingglass")
                 .font(.system(size: 23))
                 .accessibilityHidden(true)
-            Text(query.isEmpty ? "暂无应用内存数据" : "没有匹配的应用或进程")
+            Text(query.isEmpty ? t("No memory data") : t("No matching apps or processes"))
                 .font(.system(size: 13))
         }
         .foregroundStyle(.secondary)
@@ -259,17 +294,17 @@ struct MemoryView: View {
             Divider()
             HStack(spacing: 6) {
                 if let snapshot {
-                    Text("\(snapshot.groups.count) 个应用")
-                    Text("·")
+                    Text(t("\(snapshot.groups.count) apps"))
+                    Text(verbatim: "·")
                         .accessibilityHidden(true)
-                    Text("更新于")
+                    Text(t("Updated"))
                     Text(snapshot.timestamp, format: .dateTime.hour().minute().second())
                         .monospacedDigit()
                 }
                 Spacer()
-                Button("退出", action: quit)
+                Button(t("Quit"), action: quit)
                     .buttonStyle(.borderless)
-                    .accessibilityLabel("退出应用内存")
+                    .accessibilityLabel(t("Quit RAMScope"))
             }
             .font(.system(size: 11))
             .foregroundStyle(.secondary)
