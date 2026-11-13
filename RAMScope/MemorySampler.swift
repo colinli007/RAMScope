@@ -68,6 +68,7 @@ enum MemorySampler {
     private struct Process {
         let pid: pid_t
         let parent: pid_t
+        let uid: uid_t
         let started: UInt64
         let executable: String?
         let name: String
@@ -75,7 +76,9 @@ enum MemorySampler {
 
     static func sample(apps: [RunningApp]) -> MemorySnapshot {
         let uid = getuid()
-        let processes = processIDs().compactMap { readProcess($0, uid: uid) }
+        // The ownership chain spans every user: terminals start shells through the
+        // setuid-root /usr/bin/login, so only the memory totals are limited to this user.
+        let processes = processTable()
         let byPID = Dictionary(uniqueKeysWithValues: processes.map { ($0.pid, $0) })
         var names = [String: String]()
         var owners = [pid_t: String]()
@@ -98,7 +101,7 @@ enum MemorySampler {
         }
 
         var members = [Owner: [ProcessMemory]]()
-        for process in processes {
+        for process in processes where process.uid == uid {
             guard let bytes = footprint(of: process.pid) else { continue }
             let owner = owner(of: process, direct: owners, processes: byPID)
             members[owner, default: []].append(ProcessMemory(id: process.pid, name: process.name, bytes: bytes))
@@ -169,30 +172,27 @@ enum MemorySampler {
         }
     }
 
-    private static func processIDs() -> [pid_t] {
-        let expected = proc_listallpids(nil, 0)
-        guard expected > 0 else { return [] }
-        let stride = MemoryLayout<pid_t>.stride
-        var capacity = Int(expected) + 128
-        while true {
-            var pids = [pid_t](repeating: 0, count: capacity)
-            let count = pids.withUnsafeMutableBytes {
-                proc_listallpids($0.baseAddress, Int32($0.count))
+    /// Unlike PROC_PIDTBSDINFO, the kernel process table also exposes other users' processes.
+    private static func processTable() -> [Process] {
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_ALL]
+        let stride = MemoryLayout<kinfo_proc>.stride
+        // Retry when processes started between sizing the buffer and filling it.
+        for _ in 0..<3 {
+            var size = 0
+            guard sysctl(&mib, u_int(mib.count), nil, &size, nil, 0) == 0 else { return [] }
+            var entries = [kinfo_proc](repeating: kinfo_proc(), count: size / stride + 64)
+            size = entries.count * stride
+            if sysctl(&mib, u_int(mib.count), &entries, &size, nil, 0) == 0 {
+                return entries.prefix(size / stride).compactMap(readProcess)
             }
-            guard count > 0 else { return [] }
-            if Int(count) < capacity {
-                return pids.prefix(Int(count)).filter { $0 > 1 }
-            }
-            guard capacity < Int(Int32.max) / stride / 2 else { return [] }
-            capacity *= 2
+            guard errno == ENOMEM else { return [] }
         }
+        return []
     }
 
-    private static func readProcess(_ pid: pid_t, uid: uid_t) -> Process? {
-        var info = proc_bsdinfo()
-        let size = Int32(MemoryLayout<proc_bsdinfo>.size)
-        guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, size) == size,
-              info.pbi_uid == uid else { return nil }
+    private static func readProcess(_ entry: kinfo_proc) -> Process? {
+        let pid = entry.kp_proc.p_pid
+        guard pid > 1 else { return nil }
         // PROC_PIDPATHINFO_MAXSIZE is defined as 4 * MAXPATHLEN in the SDK.
         var buffer = [UInt8](repeating: 0, count: 4 * Int(MAXPATHLEN))
         let length = buffer.withUnsafeMutableBytes {
@@ -202,11 +202,13 @@ enum MemorySampler {
             ? String(decoding: buffer.prefix { $0 != 0 }, as: UTF8.self)
             : nil
         let name = path.map { URL(fileURLWithPath: $0).lastPathComponent }
-            ?? withUnsafeBytes(of: info.pbi_name) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
+            ?? withUnsafeBytes(of: entry.kp_proc.p_comm) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
+        let start = entry.kp_proc.p_starttime
         return Process(
             pid: pid,
-            parent: pid_t(info.pbi_ppid),
-            started: info.pbi_start_tvsec * 1_000_000 + info.pbi_start_tvusec,
+            parent: entry.kp_eproc.e_ppid,
+            uid: entry.kp_eproc.e_ucred.cr_uid,
+            started: UInt64(start.tv_sec) * 1_000_000 + UInt64(start.tv_usec),
             executable: path,
             name: name.isEmpty ? "PID \(pid)" : name
         )
